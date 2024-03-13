@@ -6,15 +6,17 @@
 #include <string>
 #include <vector>
 
-namespace sudoku_reader {
+namespace reader {
+std::filesystem::path get_workspace();
 
 class Reader {
 public:
-  Reader(std::string workspace);
-  std::optional<std::filesystem::path> front();
-  std::vector<short> get_problem(std::filesystem::path path);
+  Reader();
+  std::optional<std::filesystem::path> get();
+  std::vector<short> read_problem(std::string &filepath);
+  Reader &operator++();
 
 private:
   std::queue<std::filesystem::path> todo;
 };
-} // namespace sudoku_reader
+} // namespace reader

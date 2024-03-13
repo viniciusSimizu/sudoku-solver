@@ -1,23 +1,26 @@
 #include "reader.hpp"
+#include <algorithm>
 #include <cctype>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <optional>
 #include <string>
 #include <vector>
 
 namespace fs = std::filesystem;
 
-namespace sudoku_reader {
-const fs::path INPUT_PATH = fs::current_path() / "input";
+namespace reader {
+fs::path get_workspace();
+bool is_problem(std::string &filename);
 
-bool is_problem(std::string filename);
+const std::string INPUT_PATH = "input";
 
-Reader::Reader(std::string workspace) {
-  for (const auto &entry : fs::directory_iterator(INPUT_PATH)) {
-    const fs::path path = entry.path();
-    const std::string filename = path.filename().string();
+Reader::Reader() {
+  for (auto entry : fs::directory_iterator(get_workspace() / INPUT_PATH)) {
+    fs::path path = entry.path();
+    std::string filename = path.filename();
 
     if (!is_problem(filename)) {
       continue;
@@ -27,26 +30,31 @@ Reader::Reader(std::string workspace) {
   }
 }
 
-std::optional<fs::path> Reader::front() {
+std::optional<fs::path> Reader::get() {
   if (todo.empty()) {
     return std::nullopt;
   }
 
   fs::path path = todo.front();
-  todo.pop();
   return path;
 }
 
-std::vector<short> Reader::get_problem(fs::path path) {
-  std::ifstream file;
-  file.open(path.string(), std::ios::out);
+Reader &Reader::operator++() {
+  todo.pop();
+  return *this;
+}
 
+std::vector<short> Reader::read_problem(std::string &filepath) {
+  std::ifstream file;
   std::vector<short> sheet(std::pow(9, 2), 0);
   char chr;
+  int needle = 0;
 
-  for (int i = 0; file.get(chr); ++i) {
+  file.open(filepath, std::ios::out);
+
+  while (file.get(chr)) {
     if (std::isdigit(chr)) {
-      sheet[i] = chr - '0';
+      sheet[needle++] = chr - '0';
     }
   }
 
@@ -54,15 +62,34 @@ std::vector<short> Reader::get_problem(fs::path path) {
   return sheet;
 }
 
-bool is_problem(std::string filename) {
-  const static std::string ending = ".txt";
+fs::path get_workspace() {
+  std::vector<std::string> references = {".git/", "build/", "main.cpp"};
 
-  if (ending.size() > filename.size()) {
+  for (auto curr = fs::current_path(); curr != fs::path("/");
+       curr = curr.parent_path()) {
+
+    for (auto entry : fs::directory_iterator(curr)) {
+      auto filename = entry.path().filename();
+      auto find = std::find(references.begin(), references.end(), filename);
+
+      if (find != references.end()) {
+        return curr;
+      }
+    }
+  }
+
+  return fs::current_path();
+}
+
+bool is_problem(std::string &filename) {
+  const static std::string ext = ".txt";
+
+  if (ext.size() > filename.size()) {
     return false;
   }
 
-  int begin = filename.size() - ending.size();
-  return filename.compare(begin, ending.size(), ending);
+  int begin = filename.size() - ext.size();
+  return filename.compare(begin, ext.size(), ext) == 0;
 }
 
-} // namespace sudoku_reader
+} // namespace reader
