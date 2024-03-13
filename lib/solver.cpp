@@ -4,15 +4,63 @@
 
 namespace solver {
 
-int get_start(int idx);
 int get_offset_x(int idx, int x);
 int get_offset_y(int idx, int y);
 int get_offset_xy(int idx, int x, int y);
-void mark_block(int idx, bool value, std::vector<bool> &sheet);
-void mark_line(int idx, bool value, std::vector<bool> &sheet);
-void mark_column(int idx, bool value, std::vector<bool> &sheet);
+bool can_insert(int idx, short value, std::vector<bool> &sheet);
+std::vector<int> insert_value(int idx, short value, std::vector<bool> &sheet);
+void remove_value(std::vector<int> exclude, std::vector<bool> &sheet);
 
-Solver::Solver() : sheet(std::vector<bool>(std::pow(9, 3))) {}
+BlockIt::BlockIt(int idx) : It() {
+  int x = int(idx / 3 * 9) % 3;
+  int y = int(idx / std::pow(9, 2) * 3) % 3;
+  int z = idx % 9;
+
+  begin = get_offset_xy(z, x, y);
+}
+
+int BlockIt::next() {
+  if (curr >= 9) {
+    return -1;
+  }
+
+  short w = curr % 3;
+  short h = curr / 3;
+  ++curr;
+
+  return get_offset_xy(begin, w, h);
+}
+
+LineIt::LineIt(int idx) : It() {
+  int y = idx / std::pow(9, 2);
+  int z = idx % 9;
+
+  int begin = get_offset_y(z, y);
+}
+
+int LineIt::next() {
+  if (curr >= 9) {
+    return -1;
+  }
+  return get_offset_x(begin, curr++);
+}
+
+ColumnIt::ColumnIt(int idx) : It() {
+  int x = int(idx / 9) % 9;
+  int z = idx % 9;
+
+  int begin = get_offset_x(z, x);
+}
+
+int ColumnIt::next() {
+  if (curr >= 9) {
+    return -1;
+  }
+  return get_offset_y(begin, curr++);
+}
+
+Solver::Solver() : sheet(std::vector<bool>(std::pow(9, 3))), solvable(true) {}
+
 void Solver::feed(std::vector<short> problem) {
   for (int i = 0; i < sheet.size(); ++i) {
     sheet[i] = true;
@@ -25,11 +73,13 @@ void Solver::feed(std::vector<short> problem) {
       continue;
     }
 
-    int idx = i * 9 + value - 1;
-    mark_block(idx, false, sheet);
-    mark_line(idx, false, sheet);
-    mark_column(idx, false, sheet);
+    if (!can_insert(i * 9, value, sheet)) {
+      solvable = false;
+      return;
+    }
   }
+
+  solvable = true;
 }
 
 int get_start(int idx) { return std::floor(idx / 9) * 9; }
@@ -39,50 +89,66 @@ int get_offset_xy(int idx, int x, int y) {
   return get_offset_y(get_offset_x(idx, x), y);
 }
 
-void mark_block(int idx, bool value, std::vector<bool> &sheet) {
-  int x = int(idx / 3 * 9) % 3;
-  int y = int(idx / std::pow(9, 2) * 3) % 3;
-  int z = idx % 9;
+bool can_insert(int idx, short value, std::vector<bool> &sheet) {
+  int curr = idx - idx % 9;
 
-  int begin = get_offset_xy(z, x, y);
+  if (!sheet[curr + value - 1]) {
+    return false;
+  }
 
-  for (int w = 0; w < 3; ++w) {
-    for (int h = 0; h < 3; ++h) {
-      int target = get_offset_xy(begin, w, h);
+  BlockIt blockIt = curr;
+  LineIt lineIt = curr;
+  ColumnIt columnIt = curr;
+  std::vector<It *> iterators = {&blockIt, &lineIt, &columnIt};
 
-      if (target != idx) {
-        sheet[target] = false;
+  for (const auto &it : iterators) {
+    for (int target = it->next(); target != -1; target = it->next()) {
+      bool other_possible = false;
+
+      for (int i = 0; i < 9; ++i) {
+        if (i != value - 1 && sheet[target + i]) {
+          other_possible = true;
+          break;
+        }
+      }
+
+      if (!other_possible) {
+        return false;
       }
     }
   }
+
+  return true;
 }
 
-void mark_line(int idx, bool value, std::vector<bool> &sheet) {
-  int y = idx / std::pow(9, 2);
-  int z = idx % 9;
+std::vector<int> insert_value(int idx, short value, std::vector<bool> &sheet) {
+  std::vector<int> revert(8 * 3 - 4);
+  int curr = idx - idx % 9 + value - 1;
+  BlockIt blockIt = curr;
+  LineIt lineIt = curr;
+  ColumnIt columnIt = curr;
+  std::vector<It *> iterators = {&blockIt, &lineIt, &columnIt};
 
-  int begin = get_offset_y(z, y);
+  for (const auto &it : iterators) {
+    for (int target = it->next(); target != -1; target = it->next()) {
+      if (target == curr) {
+        continue;
+      }
 
-  for (int w = 0; w < 9; ++w) {
-    int target = get_offset_x(begin, w);
+      if (sheet[target]) {
+        revert.push_back(target);
+      }
 
-    if (target != idx) {
       sheet[target] = false;
     }
   }
+
+  return revert;
 }
-void mark_column(int idx, bool value, std::vector<bool> &sheet) {
-  int x = int(idx / 9) % 9;
-  int z = idx % 9;
 
-  int begin = get_offset_x(z, x);
-
-  for (int h = 0; h < 9; ++h) {
-    int target = get_offset_y(begin, h);
-
-    if (target != idx) {
-      sheet[target] = false;
-    }
+void remove_value(std::vector<int> exclude, std::vector<bool> &sheet) {
+  for (int target : exclude) {
+    sheet[target] = true;
   }
 }
 }; // namespace solver
