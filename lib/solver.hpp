@@ -1,8 +1,13 @@
 #pragma once
 
+#include <string>
 #include <vector>
 
 namespace solver {
+int get_offset_x(int idx, int x);
+int get_offset_y(int idx, int y);
+int get_offset_xy(int idx, int x, int y);
+
 struct It {
 public:
   virtual int next() = 0;
@@ -32,12 +37,12 @@ public:
 
 class Solver {
 public:
+  std::vector<bool> sheet;
   Solver();
   void feed(std::vector<short> problem);
-  void solve();
+  bool solve(std::string name);
 
 private:
-  std::vector<bool> sheet;
   bool solvable;
 };
 }; // namespace solver
