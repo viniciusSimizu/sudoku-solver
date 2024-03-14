@@ -1,50 +1,59 @@
 #include "solver.hpp"
+#include <array>
 #include <cassert>
+#include <cmath>
 #include <vector>
-void block_iterator_test();
-/* void line_iterator_test();
-void column_iterator_test(); */
+
+void feed_solver_test(solver::Solver &solver);
+void solve_solver_test();
 
 int main() {
-  block_iterator_test();
+  solver::Solver solver;
+
+  feed_solver_test(solver);
   return 0;
 }
 
-void block_iterator_test() {
-  std::vector<int *> cases;
-  std::vector<int *> expect;
+void feed_solver_test(solver::Solver &solver) {
+  std::vector<short> problem(std::pow(9, 2), 0);
+  std::vector<bool> expect(std::pow(9, 3), true);
+  std::vector<std::array<int, 2>> fill;
+  const short value = 1;
+  fill.push_back({0, 0});
+  fill.push_back({3, 1});
+  fill.push_back({6, 2});
 
-  for (int i = 0; i < 9; ++i) {
-    int x = i % 3;
-    int y = i / 3;
-    int *coor = new int[2];
-    coor[0] = x * 3 + x;
-    coor[1] = y * 3 + y;
-    cases.push_back(coor);
+  fill.push_back({1, 3});
+  fill.push_back({4, 4});
+  fill.push_back({7, 5});
 
-    int *block = new int[18];
-    for (int j = 0; j < 9; ++j) {
-      int column = j % 3;
-      int line = j / 3;
-      block[j * 2] = x * 3 + column;
-      block[j * 2 + 1] = y * 3 + line;
+  fill.push_back({2, 6});
+  fill.push_back({5, 7});
+  fill.push_back({8, 8});
+
+  for (const auto &coor : fill) {
+    int idx = coor[0] + coor[1] * 9;
+    problem[idx] = value;
+
+    idx = coor[0] * 9 + coor[1] * std::pow(9, 2);
+    solver::BlockIt blockIt = idx;
+    solver::RowIt rowIt = idx;
+    solver::ColumnIt columnIt = idx;
+    std::vector<solver::It *> iterators = {&blockIt, &rowIt, &columnIt};
+
+    for (const auto &it : iterators) {
+      for (int target = it->next(); target != -1; target = it->next()) {
+        if (target != idx) {
+          expect[target + value - 1] = false;
+        }
+      }
     }
-    expect.push_back(block);
   }
 
-  for (int i = 0; i < cases.size(); ++i) {
-    int *coor = cases[i];
-    int *block = expect[i];
-    solver::BlockIt it = solver::get_offset_xy(0, coor[0], coor[1]);
+  solver.feed(problem);
 
-    for (int j = 0; j < 9; ++j) {
-      int x = block[j * 2];
-      int y = block[(j * 2 + 1)];
-      int idx = solver::get_offset_xy(0, x, y);
-      assert(idx == it.next());
-    }
-
-    delete[] coor;
-    delete[] block;
+  assert(expect.size() == solver.sheet.size());
+  for (int i = 0; i < expect.size(); ++i) {
+    assert(expect[i] == solver.sheet[i]);
   }
 }

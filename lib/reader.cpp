@@ -13,7 +13,7 @@ namespace fs = std::filesystem;
 
 namespace reader {
 fs::path get_workspace();
-bool is_problem(std::string &filename);
+bool is_problem(const std::string &filename);
 
 const std::string INPUT_PATH = "input";
 
@@ -44,7 +44,7 @@ Reader &Reader::operator++() {
   return *this;
 }
 
-std::vector<short> Reader::read_problem(std::string &filepath) {
+std::vector<short> Reader::read_problem(const std::string &filepath) {
   std::ifstream file;
   std::vector<short> sheet(std::pow(9, 2), 0);
   char chr;
@@ -81,7 +81,7 @@ fs::path get_workspace() {
   return fs::current_path();
 }
 
-bool is_problem(std::string &filename) {
+bool is_problem(const std::string &filename) {
   const static std::string ext = ".txt";
 
   if (ext.size() > filename.size()) {

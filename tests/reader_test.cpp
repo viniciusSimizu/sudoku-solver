@@ -9,8 +9,9 @@
 
 std::vector<std::string> find_problems_test(reader::Reader &reader);
 void read_problems_test(reader::Reader &reader,
-                        std::vector<std::string> &cases);
-std::vector<short> read_problem(std::string &file);
+                        const std::vector<std::string> &cases);
+
+std::vector<short> read_problem(const std::string &file);
 bool has_case(std::string &file);
 
 const static auto path = reader::get_workspace() / "input";
@@ -41,14 +42,14 @@ std::vector<std::string> find_problems_test(reader::Reader &reader) {
 }
 
 void read_problems_test(reader::Reader &reader,
-                        std::vector<std::string> &cases) {
+                        const std::vector<std::string> &cases) {
   for (int i = 0; i < cases.size(); ++i) {
     auto _case = cases[i];
     assert(reader.read_problem(_case) == read_problem(_case));
   }
 }
 
-std::vector<short> read_problem(std::string &file) {
+std::vector<short> read_problem(const std::string &file) {
   std::ifstream out;
   std::vector<short> sheet(9 * 9);
   char chr;

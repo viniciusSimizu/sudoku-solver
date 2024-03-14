@@ -13,7 +13,7 @@ class Reader {
 public:
   Reader();
   std::optional<std::filesystem::path> get();
-  std::vector<short> read_problem(std::string &filepath);
+  std::vector<short> read_problem(const std::string &filepath);
   Reader &operator++();
 
 private:
