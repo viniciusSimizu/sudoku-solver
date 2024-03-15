@@ -1,13 +1,12 @@
 #include "solver.hpp"
 #include <cassert>
-#include <cmath>
 #include <vector>
 
 void block_test();
 void row_test();
 void column_test();
 
-int get_idx(int x, int y);
+int get_2d_idx(int x, int y);
 
 int main() {
   block_test();
@@ -21,14 +20,14 @@ void block_test() {
   std::vector<int *> expect;
 
   for (int i = 0; i < 9; ++i) {
+    int *block = new int[18];
+    int *coor = new int[2];
     int block_x = i % 3;
     int block_y = i / 3;
-    int *coor = new int[2];
     coor[0] = block_x * 3 + block_x;
     coor[1] = block_y * 3 + block_y;
     cases.push_back(coor);
 
-    int *block = new int[18];
     for (int j = 0; j < 9; ++j) {
       int column = j % 3;
       int row = j / 3;
@@ -41,13 +40,12 @@ void block_test() {
   for (int i = 0; i < cases.size(); ++i) {
     int *coor = cases[i];
     int *block = expect[i];
-
-    solver::BlockIt it = coor[1] * std::pow(9, 2) + coor[0] * 9;
+		solver::BlockIt it = get_2d_idx(coor[0], coor[1]);
 
     for (int j = 0; j < 9; ++j) {
       int x = block[j * 2];
       int y = block[j * 2 + 1];
-      assert(get_idx(x, y) == it.next());
+      assert(get_2d_idx(x, y) == it.next());
     }
     assert(it.next() == -1);
 
@@ -77,10 +75,10 @@ void row_test() {
     int *coor = cases[i];
     int *x = expect[i];
     int y = x[0];
-    solver::RowIt it = get_idx(coor[0], coor[1]);
+    solver::RowIt it = get_2d_idx(coor[0], coor[1]);
 
     for (int j = 0; j < 9; ++j) {
-      assert(get_idx(x[j + 1], y) == it.next());
+      assert(get_2d_idx(x[j + 1], y) == it.next());
     }
     assert(it.next() == -1);
 
@@ -110,10 +108,10 @@ void column_test() {
     int *coor = cases[i];
     int *y = expect[i];
     int x = y[0];
-    solver::ColumnIt it = get_idx(coor[0], coor[1]);
+    solver::ColumnIt it = get_2d_idx(coor[0], coor[1]);
 
     for (int j = 0; j < 9; ++j) {
-      assert(get_idx(x, y[j + 1]) == it.next());
+      assert(get_2d_idx(x, y[j + 1]) == it.next());
     }
     assert(it.next() == -1);
 
@@ -122,4 +120,4 @@ void column_test() {
   }
 }
 
-int get_idx(int x, int y) { return x * 9 + y * std::pow(9, 2); }
+int get_2d_idx(int x, int y) { return x + y * 9; }

@@ -1,18 +1,17 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
 namespace solver {
 class Solver {
 public:
+  bool solvable;
   std::vector<bool> sheet;
   Solver();
-  void feed(const std::vector<short> &problem);
+  void feed(const std::vector<uint8_t> &problem);
   bool solve(const std::string &name);
-
-private:
-  bool solvable;
 };
 
 struct It {
@@ -26,19 +25,19 @@ protected:
 
 struct BlockIt : It {
 public:
-  BlockIt(int idx);
+  BlockIt(int idx_2d);
   int next();
 };
 
 struct RowIt : It {
 public:
-  RowIt(int idx);
+  RowIt(int idx_2d);
   int next();
 };
 
 struct ColumnIt : It {
 public:
-  ColumnIt(int idx);
+  ColumnIt(int idx_2d);
   int next();
 };
 }; // namespace solver

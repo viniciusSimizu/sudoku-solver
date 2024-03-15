@@ -1,8 +1,5 @@
-add_library(include INTERFACE)
-add_library(reader reader.cpp)
-add_library(solver solver.cpp)
+add_library(reader reader/reader.cpp)
+add_library(solver solver/solver.cpp)
 
-target_include_directories(include INTERFACE .)
-
-target_link_libraries(reader PUBLIC include)
-target_link_libraries(solver PUBLIC include)
+target_include_directories(reader PUBLIC ${CMAKE_CURRENT_LIST_DIR}/reader)
+target_include_directories(solver PUBLIC ${CMAKE_CURRENT_LIST_DIR}/solver)
