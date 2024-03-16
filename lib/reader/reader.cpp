@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -44,11 +45,11 @@ Reader &Reader::operator++() {
   return *this;
 }
 
-std::vector<short> Reader::read_problem(const std::string &filepath) {
+std::vector<uint8_t> Reader::read_problem(const std::string &filepath) {
   std::ifstream file;
-  std::vector<short> sheet(std::pow(9, 2), 0);
+  std::vector<uint8_t> sheet(std::pow(9, 2), 0);
   char chr;
-  int needle = 0;
+  uint8_t needle = 0;
 
   file.open(filepath, std::ios::out);
 
@@ -89,7 +90,14 @@ bool is_problem(const std::string &filename) {
   }
 
   int begin = filename.size() - ext.size();
-  return filename.compare(begin, ext.size(), ext) == 0;
+
+  for (int i = 0; i < ext.size(); ++i) {
+    if (filename[i] != ext[i]) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 } // namespace reader

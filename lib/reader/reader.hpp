@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <queue>
@@ -13,7 +14,7 @@ class Reader {
 public:
   Reader();
   std::optional<std::filesystem::path> get();
-  std::vector<short> read_problem(const std::string &filepath);
+  std::vector<uint8_t> read_problem(const std::string &filepath);
   Reader &operator++();
 
 private:

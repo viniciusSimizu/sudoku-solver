@@ -1,34 +1,39 @@
+#include "iterator.hpp"
 #include "solver.hpp"
 #include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <vector>
 
+using namespace iterator;
+using solver::Solver;
+
 struct Problem {
   std::vector<uint8_t> case_;
   std::vector<bool> expect;
 };
 
-void feed_solver_test(solver::Solver &solver);
+void feed_solver_test(Solver &solver);
 void solve_solver_test();
 
-Problem test_case_1_resolved();
-Problem test_case_2_partial();
-Problem test_case_3_invalid();
+Problem feed_solver_test_1_resolved();
+Problem feed_solver_test_2_partial();
+Problem feed_solver_test_3_invalid();
+
 std::vector<bool> build_expected(const std::vector<uint8_t> &case_);
-int get_2d_idx(uint8_t x, uint8_t y);
-int get_3d_idx(uint8_t x, uint8_t y);
-int get_2d_to_3d_idx(int idx);
+uint8_t get_2d_idx(uint8_t x, uint8_t y);
+uint16_t get_3d_idx(uint8_t x, uint8_t y);
+uint16_t get_2d_to_3d_idx(uint8_t idx_2d);
 
 int main() {
-  solver::Solver solver;
+  Solver solver;
 
   feed_solver_test(solver);
   return 0;
 }
 
-void feed_solver_test(solver::Solver &solver) {
-  Problem problem = test_case_1_resolved();
+void feed_solver_test(Solver &solver) {
+  Problem problem = feed_solver_test_1_resolved();
   solver.feed(problem.case_);
   assert(solver.solvable);
   assert(solver.sheet.size() == problem.expect.size());
@@ -36,7 +41,7 @@ void feed_solver_test(solver::Solver &solver) {
     assert(solver.sheet[i] == problem.expect[i]);
   }
 
-  problem = test_case_2_partial();
+  problem = feed_solver_test_2_partial();
   solver.feed(problem.case_);
   assert(solver.solvable);
   assert(solver.sheet.size() == problem.expect.size());
@@ -46,12 +51,12 @@ void feed_solver_test(solver::Solver &solver) {
     assert(solver.sheet[i] == problem.expect[i]);
   }
 
-  problem = test_case_3_invalid();
+  problem = feed_solver_test_3_invalid();
   solver.feed(problem.case_);
   assert(!solver.solvable);
 }
 
-Problem test_case_1_resolved() {
+Problem feed_solver_test_1_resolved() {
   Problem problem;
   std::vector<uint8_t> case_;
 
@@ -80,7 +85,7 @@ Problem test_case_1_resolved() {
   return problem;
 }
 
-Problem test_case_2_partial() {
+Problem feed_solver_test_2_partial() {
   Problem problem;
   std::vector<uint8_t> case_(pow(9, 2), 0);
 
@@ -116,7 +121,7 @@ Problem test_case_2_partial() {
   return problem;
 }
 
-Problem test_case_3_invalid() {
+Problem feed_solver_test_3_invalid() {
   Problem problem;
   std::vector<uint8_t> case_(pow(9, 2), 0);
 
@@ -140,29 +145,29 @@ Problem test_case_3_invalid() {
 std::vector<bool> build_expected(const std::vector<uint8_t> &case_) {
   std::vector<bool> expect(pow(9, 3), true);
 
-  for (int idx_2d = 0; idx_2d < case_.size(); ++idx_2d) {
-    int value = case_[idx_2d];
-    if (value == 0) {
+  for (uint8_t idx_2d = 0; idx_2d < case_.size(); ++idx_2d) {
+    uint8_t z = case_[idx_2d];
+    if (z == 0) {
       continue;
     }
 
-    int idx_3d = get_2d_to_3d_idx(idx_2d);
-    solver::BlockIt blockIt = idx_2d;
-    solver::RowIt rowIt = idx_2d;
-    solver::ColumnIt columnIt = idx_2d;
-    std::vector<solver::It *> iterators = {&blockIt, &rowIt, &columnIt};
+    uint16_t idx_3d = get_2d_to_3d_idx(idx_2d);
+    BlockIt blockIt = idx_2d;
+    RowIt rowIt = idx_2d;
+    ColumnIt columnIt = idx_2d;
+    std::vector<It *> iterators = {&blockIt, &rowIt, &columnIt};
 
     for (int i = 0; i < 9; ++i) {
-      if (i != value - 1) {
+      if (i != z - 1) {
         expect[idx_3d + i] = false;
       }
     }
 
     for (const auto &it : iterators) {
-      for (int curr = it->next(); curr != -1; curr = it->next()) {
+      for (int8_t curr = it->next(); curr != -1; curr = it->next()) {
         if (curr != idx_2d) {
           idx_3d = get_2d_to_3d_idx(curr);
-          expect[idx_3d + value - 1] = false;
+          expect[idx_3d + z - 1] = false;
         }
       }
     }
@@ -171,10 +176,10 @@ std::vector<bool> build_expected(const std::vector<uint8_t> &case_) {
   return expect;
 }
 
-int get_2d_idx(uint8_t x, uint8_t y) { return x + y * 9; }
-int get_3d_idx(uint8_t x, uint8_t y) { return x * 9 + y * pow(9, 2); }
-int get_2d_to_3d_idx(int idx) {
-  uint8_t x = idx % 9;
-  uint8_t y = idx / 9;
+uint8_t get_2d_idx(uint8_t x, uint8_t y) { return x + y * 9; }
+uint16_t get_3d_idx(uint8_t x, uint8_t y) { return x * 9 + y * pow(9, 2); }
+uint16_t get_2d_to_3d_idx(uint8_t idx_2d) {
+  uint8_t x = idx_2d % 9;
+  uint8_t y = idx_2d / 9;
   return get_3d_idx(x, y);
 }

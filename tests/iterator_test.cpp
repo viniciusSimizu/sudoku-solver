@@ -1,12 +1,15 @@
-#include "solver.hpp"
+#include "iterator.hpp"
 #include <cassert>
+#include <cstdint>
 #include <vector>
+
+using namespace iterator;
 
 void block_test();
 void row_test();
 void column_test();
 
-int get_2d_idx(int x, int y);
+uint8_t get_2d_idx(uint8_t x, uint8_t y);
 
 int main() {
   block_test();
@@ -16,108 +19,92 @@ int main() {
 }
 
 void block_test() {
-  std::vector<int *> cases;
-  std::vector<int *> expect;
+  std::vector<uint8_t> cases;
+  std::vector<uint8_t *> expect;
 
   for (int i = 0; i < 9; ++i) {
-    int *block = new int[18];
-    int *coor = new int[2];
-    int block_x = i % 3;
-    int block_y = i / 3;
-    coor[0] = block_x * 3 + block_x;
-    coor[1] = block_y * 3 + block_y;
-    cases.push_back(coor);
+    uint8_t *block = new uint8_t[9];
+    uint8_t block_x = i % 3;
+    uint8_t block_y = i / 3;
+    uint8_t x = block_x * 3 + block_x;
+    uint8_t y = block_y * 3 + block_y;
+    cases.push_back(get_2d_idx(x, y));
 
     for (int j = 0; j < 9; ++j) {
-      int column = j % 3;
-      int row = j / 3;
-      block[j * 2] = block_x * 3 + column;
-      block[j * 2 + 1] = block_y * 3 + row;
+      uint8_t column = j % 3;
+      uint8_t row = j / 3;
+      x = block_x * 3 + column;
+      y = block_y * 3 + row;
+      block[j] = get_2d_idx(x, y);
     }
     expect.push_back(block);
   }
 
   for (int i = 0; i < cases.size(); ++i) {
-    int *coor = cases[i];
-    int *block = expect[i];
-		solver::BlockIt it = get_2d_idx(coor[0], coor[1]);
+    BlockIt it = cases[i];
+    uint8_t *block = expect[i];
 
     for (int j = 0; j < 9; ++j) {
-      int x = block[j * 2];
-      int y = block[j * 2 + 1];
-      assert(get_2d_idx(x, y) == it.next());
+      assert(block[j] == it.next());
     }
     assert(it.next() == -1);
 
-    delete[] coor;
     delete[] block;
   }
 }
 
 void row_test() {
-  std::vector<int *> cases;
-  std::vector<int *> expect;
+  std::vector<uint8_t> cases;
+  std::vector<uint8_t *> expect;
 
   for (int i = 0; i < 9; ++i) {
-    int *coor = new int[2];
-    coor[0] = coor[1] = i;
-    cases.push_back(coor);
+    cases.push_back(get_2d_idx(i, i));
 
-    int *row = new int[10];
-    row[0] = i;
+    uint8_t *row = new uint8_t[9];
     for (int j = 0; j < 9; ++j) {
-      row[j + 1] = j;
+      row[j] = get_2d_idx(j, i);
     }
     expect.push_back(row);
   }
 
   for (int i = 0; i < cases.size(); ++i) {
-    int *coor = cases[i];
-    int *x = expect[i];
-    int y = x[0];
-    solver::RowIt it = get_2d_idx(coor[0], coor[1]);
+    uint8_t *row = expect[i];
+    RowIt it = cases[i];
 
     for (int j = 0; j < 9; ++j) {
-      assert(get_2d_idx(x[j + 1], y) == it.next());
+      assert(row[j] == it.next());
     }
     assert(it.next() == -1);
 
-    delete[] coor;
-    delete[] x;
+    delete[] row;
   }
 }
 
 void column_test() {
-  std::vector<int *> cases;
-  std::vector<int *> expect;
+  std::vector<uint8_t> cases;
+  std::vector<uint8_t *> expect;
 
   for (int i = 0; i < 9; ++i) {
-    int *coor = new int[2];
-    coor[0] = coor[1] = i;
-    cases.push_back(coor);
+    cases.push_back(get_2d_idx(i, i));
 
-    int *column = new int[10];
-    column[0] = i;
+    uint8_t *column = new uint8_t[9];
     for (int j = 0; j < 9; ++j) {
-      column[j + 1] = j;
+      column[j] = get_2d_idx(i, j);
     }
     expect.push_back(column);
   }
 
   for (int i = 0; i < cases.size(); ++i) {
-    int *coor = cases[i];
-    int *y = expect[i];
-    int x = y[0];
-    solver::ColumnIt it = get_2d_idx(coor[0], coor[1]);
+    uint8_t *column = expect[i];
+    ColumnIt it = cases[i];
 
     for (int j = 0; j < 9; ++j) {
-      assert(get_2d_idx(x, y[j + 1]) == it.next());
+      assert(column[j] == it.next());
     }
     assert(it.next() == -1);
 
-    delete[] coor;
-    delete[] y;
+    delete[] column;
   }
 }
 
-int get_2d_idx(int x, int y) { return x + y * 9; }
+uint8_t get_2d_idx(uint8_t x, uint8_t y) { return x + y * 9; }
