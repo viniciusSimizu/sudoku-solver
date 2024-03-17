@@ -8,17 +8,20 @@
 using namespace iterator;
 using solver::Solver;
 
-struct Problem {
+template <typename T> struct Problem {
   std::vector<uint8_t> case_;
-  std::vector<bool> expect;
+  std::vector<T> expect;
 };
 
 void feed_solver_test(Solver &solver);
-void solve_solver_test();
+Problem<bool> feed_solver_test_case_1_resolved();
+Problem<bool> feed_solver_test_case_2_partial();
+Problem<bool> feed_solver_test_case_3_invalid();
 
-Problem feed_solver_test_1_resolved();
-Problem feed_solver_test_2_partial();
-Problem feed_solver_test_3_invalid();
+std::vector<uint8_t> solve_solver_test(Solver &solver);
+Problem<uint8_t> solve_solver_test_case();
+
+void export_solver_test(Solver &solver, const std::vector<uint8_t> &expect);
 
 std::vector<bool> build_expected(const std::vector<uint8_t> &case_);
 uint8_t get_2d_idx(uint8_t x, uint8_t y);
@@ -29,11 +32,14 @@ int main() {
   Solver solver;
 
   feed_solver_test(solver);
+  auto expect = solve_solver_test(solver);
+  export_solver_test(solver, expect);
+
   return 0;
 }
 
 void feed_solver_test(Solver &solver) {
-  Problem problem = feed_solver_test_1_resolved();
+  Problem problem = feed_solver_test_case_1_resolved();
   solver.feed(problem.case_);
   assert(solver.solvable);
   assert(solver.sheet.size() == problem.expect.size());
@@ -41,7 +47,7 @@ void feed_solver_test(Solver &solver) {
     assert(solver.sheet[i] == problem.expect[i]);
   }
 
-  problem = feed_solver_test_2_partial();
+  problem = feed_solver_test_case_2_partial();
   solver.feed(problem.case_);
   assert(solver.solvable);
   assert(solver.sheet.size() == problem.expect.size());
@@ -51,13 +57,37 @@ void feed_solver_test(Solver &solver) {
     assert(solver.sheet[i] == problem.expect[i]);
   }
 
-  problem = feed_solver_test_3_invalid();
+  problem = feed_solver_test_case_3_invalid();
   solver.feed(problem.case_);
   assert(!solver.solvable);
 }
 
-Problem feed_solver_test_1_resolved() {
-  Problem problem;
+std::vector<uint8_t> solve_solver_test(Solver &solver) {
+  auto problem = solve_solver_test_case();
+  auto expect = build_expected(problem.expect);
+
+  solver.feed(problem.case_);
+  solver.solve();
+
+  assert(solver.solvable);
+  assert(solver.sheet.size() == expect.size());
+  for (int i = 0; i < expect.size(); ++i) {
+    assert(solver.sheet[i] == expect[i]);
+  }
+
+  return problem.expect;
+}
+
+void export_solver_test(Solver &solver, const std::vector<uint8_t> &expect) {
+  auto result = solver.export_();
+  assert(result.size() == expect.size());
+  for (int idx_2d = 0; idx_2d < expect.size(); ++idx_2d) {
+    assert(result[idx_2d] == expect[idx_2d]);
+  }
+}
+
+Problem<bool> feed_solver_test_case_1_resolved() {
+  Problem<bool> problem;
   std::vector<uint8_t> case_;
 
   // 1 2 3 7 8 9 4 5 6
@@ -85,8 +115,8 @@ Problem feed_solver_test_1_resolved() {
   return problem;
 }
 
-Problem feed_solver_test_2_partial() {
-  Problem problem;
+Problem<bool> feed_solver_test_case_2_partial() {
+  Problem<bool> problem;
   std::vector<uint8_t> case_(pow(9, 2), 0);
 
   // 7 x x x x x 1 x x
@@ -121,8 +151,8 @@ Problem feed_solver_test_2_partial() {
   return problem;
 }
 
-Problem feed_solver_test_3_invalid() {
-  Problem problem;
+Problem<bool> feed_solver_test_case_3_invalid() {
+  Problem<bool> problem;
   std::vector<uint8_t> case_(pow(9, 2), 0);
 
   // x x x x x x 1 1 x
@@ -142,6 +172,58 @@ Problem feed_solver_test_3_invalid() {
   return problem;
 }
 
+Problem<uint8_t> solve_solver_test_case() {
+  Problem<uint8_t> problem;
+
+  std::vector<uint8_t> case_;
+
+  // x 2 3 7 8 9 4 5 6
+  // 4 x 6 1 2 3 7 8 9
+  // 7 8 x 4 5 6 1 2 3
+  // 3 1 2 x 7 8 6 4 5
+  // 6 4 5 3 x 2 9 7 8
+  // 9 7 8 6 4 x 3 1 2
+  // 2 3 1 8 9 7 x 6 4
+  // 5 6 4 2 3 1 8 x 7
+  // 8 9 7 5 6 4 2 3 x
+
+  case_.insert(case_.end(), {0, 2, 3, 7, 8, 9, 4, 5, 6});
+  case_.insert(case_.end(), {4, 0, 6, 1, 2, 3, 7, 8, 9});
+  case_.insert(case_.end(), {7, 8, 0, 4, 5, 6, 1, 2, 3});
+  case_.insert(case_.end(), {3, 1, 2, 0, 7, 8, 6, 4, 5});
+  case_.insert(case_.end(), {6, 4, 5, 3, 0, 2, 9, 7, 8});
+  case_.insert(case_.end(), {9, 7, 8, 6, 4, 0, 3, 1, 2});
+  case_.insert(case_.end(), {2, 3, 1, 8, 9, 7, 0, 6, 4});
+  case_.insert(case_.end(), {5, 6, 4, 2, 3, 1, 8, 0, 7});
+  case_.insert(case_.end(), {8, 9, 7, 5, 6, 4, 2, 3, 0});
+
+  std::vector<uint8_t> expect;
+
+  // 1 2 3 7 8 9 4 5 6
+  // 4 5 6 1 2 3 7 8 9
+  // 7 8 9 4 5 6 1 2 3
+  // 3 1 2 9 7 8 6 4 5
+  // 6 4 5 3 1 2 9 7 8
+  // 9 7 8 6 4 5 3 1 2
+  // 2 3 1 8 9 7 5 6 4
+  // 5 6 4 2 3 1 8 9 7
+  // 8 9 7 5 6 4 2 3 1
+
+  expect.insert(expect.end(), {1, 2, 3, 7, 8, 9, 4, 5, 6});
+  expect.insert(expect.end(), {4, 5, 6, 1, 2, 3, 7, 8, 9});
+  expect.insert(expect.end(), {7, 8, 9, 4, 5, 6, 1, 2, 3});
+  expect.insert(expect.end(), {3, 1, 2, 9, 7, 8, 6, 4, 5});
+  expect.insert(expect.end(), {6, 4, 5, 3, 1, 2, 9, 7, 8});
+  expect.insert(expect.end(), {9, 7, 8, 6, 4, 5, 3, 1, 2});
+  expect.insert(expect.end(), {2, 3, 1, 8, 9, 7, 5, 6, 4});
+  expect.insert(expect.end(), {5, 6, 4, 2, 3, 1, 8, 9, 7});
+  expect.insert(expect.end(), {8, 9, 7, 5, 6, 4, 2, 3, 1});
+
+  problem.case_ = case_;
+  problem.expect = expect;
+  return problem;
+}
+
 std::vector<bool> build_expected(const std::vector<uint8_t> &case_) {
   std::vector<bool> expect(pow(9, 3), true);
 
@@ -158,7 +240,7 @@ std::vector<bool> build_expected(const std::vector<uint8_t> &case_) {
     std::vector<It *> iterators = {&blockIt, &rowIt, &columnIt};
 
     for (int i = 0; i < 9; ++i) {
-      if (i != z - 1) {
+      if (i + 1 != z) {
         expect[idx_3d + i] = false;
       }
     }

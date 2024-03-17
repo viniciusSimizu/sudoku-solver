@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <string>
 #include <vector>
 
 namespace solver {
@@ -11,6 +10,7 @@ public:
   std::vector<bool> sheet;
   Solver();
   void feed(const std::vector<uint8_t> &problem);
-  bool solve(const std::string &name);
+  void solve();
+  std::vector<uint8_t> export_();
 };
 }; // namespace solver

@@ -2,7 +2,6 @@
 #include "iterator.hpp"
 #include <cmath>
 #include <cstdint>
-#include <iostream>
 #include <vector>
 
 using namespace iterator;
@@ -11,7 +10,6 @@ namespace solver {
 std::vector<uint16_t> insert_value(uint8_t idx_2d, uint8_t z,
                                    std::vector<bool> &sheet);
 bool is_valid_problem(const std::vector<uint8_t> &problem);
-void undo_value(const std::vector<uint16_t> &exclude, std::vector<bool> &sheet);
 void solve_problem(uint8_t idx_2d, std::vector<bool> &sheet, bool &solved);
 
 uint16_t get_2d_to_3d_idx(uint8_t idx_2d);
@@ -28,7 +26,7 @@ void Solver::feed(const std::vector<uint8_t> &problem) {
     sheet[idx_3d] = true;
   }
 
-  for (uint8_t idx_2d = 0; idx_2d < problem.size(); ++idx_2d) {
+  for (uint8_t idx_2d = 0; idx_2d < pow(9, 2); ++idx_2d) {
     uint8_t z = problem[idx_2d];
 
     if (z == 0) {
@@ -41,10 +39,9 @@ void Solver::feed(const std::vector<uint8_t> &problem) {
   solvable = true;
 }
 
-bool Solver::solve(const std::string &name) {
+void Solver::solve() {
   if (!solvable) {
-    std::cout << name << " aborted\n";
-    return false;
+    return;
   }
 
   bool solved = false;
@@ -52,10 +49,28 @@ bool Solver::solve(const std::string &name) {
 
   if (!solved) {
     solvable = false;
-    return false;
+  }
+}
+
+std::vector<uint8_t> Solver::export_() {
+  std::vector<uint8_t> matrix(pow(9, 2), 0);
+
+  if (!solvable) {
+    return matrix;
   }
 
-  return true;
+  for (int idx_2d = 0; idx_2d < pow(9, 2); ++idx_2d) {
+    uint16_t idx_3d = get_2d_to_3d_idx(idx_2d);
+
+    for (int z = 0; z < 9; ++z) {
+      if (sheet[idx_3d + z]) {
+        matrix[idx_2d] = z + 1;
+        break;
+      }
+    }
+  }
+
+  return matrix;
 }
 
 std::vector<uint16_t> insert_value(uint8_t idx_2d, uint8_t z,
@@ -69,7 +84,11 @@ std::vector<uint16_t> insert_value(uint8_t idx_2d, uint8_t z,
   std::vector<It *> iterators = {&blockIt, &rowIt, &columnIt};
 
   for (int i = 0; i < 9; ++i) {
-    if (i != z - 1 && sheet[idx_3d + i]) {
+    if (i + 1 == z) {
+      continue;
+    }
+
+    if (sheet[idx_3d + i]) {
       revert.push_back(idx_3d + i);
       sheet[idx_3d + i] = false;
     }
@@ -117,34 +136,28 @@ bool is_valid_problem(const std::vector<uint8_t> &problem) {
   return true;
 }
 
-void undo_value(const std::vector<uint16_t> &exclude,
-                std::vector<bool> &sheet) {
-  for (uint16_t target : exclude) {
-    sheet[target] = true;
-  }
-}
-
 void solve_problem(uint8_t idx_2d, std::vector<bool> &sheet, bool &solved) {
-  uint16_t idx_3d = get_2d_to_3d_idx(idx_2d);
-
-  if (idx_3d >= sheet.size()) {
+  if (idx_2d >= pow(9, 2)) {
     solved = true;
     return;
   }
+  uint16_t idx_3d = get_2d_to_3d_idx(idx_2d);
 
-  for (int i = 0; i < 9; ++i) {
-    if (!sheet[idx_3d + i]) {
+  for (int z = 0; z < 9; ++z) {
+    if (!sheet[idx_3d + z]) {
       continue;
     }
 
-    auto revert = insert_value(idx_2d, i, sheet);
+    auto revert = insert_value(idx_2d, z + 1, sheet);
     solve_problem(idx_2d + 1, sheet, solved);
 
     if (solved) {
       return;
     }
 
-    undo_value(revert, sheet);
+    for (uint16_t idx_3d : revert) {
+      sheet[idx_3d] = true;
+    }
   }
 }
 
