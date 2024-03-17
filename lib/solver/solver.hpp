@@ -8,7 +8,7 @@ class Solver {
 public:
   bool solvable;
   std::vector<bool> sheet;
-  Solver();
+  Solver() : solvable(false){};
   void feed(const std::vector<uint8_t> &problem);
   void solve();
   std::vector<uint8_t> export_();

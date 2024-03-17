@@ -7,3 +7,7 @@ add_subdirectory(lib)
 
 enable_testing()
 add_subdirectory(tests)
+
+add_executable(main main.cpp)
+
+target_link_libraries(main PRIVATE reader solver writer)

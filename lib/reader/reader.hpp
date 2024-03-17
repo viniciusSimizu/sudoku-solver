@@ -8,16 +8,17 @@
 #include <vector>
 
 namespace reader {
-std::filesystem::path get_workspace();
+struct Sudoku {
+  std::vector<uint8_t> sheet;
+  std::string name;
+};
+
+Sudoku read_problem(const std::filesystem::path &filepath);
 
 class Reader {
 public:
-  Reader();
-  std::optional<std::filesystem::path> get();
-  std::vector<uint8_t> read_problem(const std::string &filepath);
-  Reader &operator++();
-
-private:
   std::queue<std::filesystem::path> todo;
+  void read_dir();
+  std::optional<Sudoku> get();
 };
 } // namespace reader

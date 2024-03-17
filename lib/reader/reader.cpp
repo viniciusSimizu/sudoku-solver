@@ -1,29 +1,30 @@
 #include "reader.hpp"
-#include <algorithm>
+#include "workspace.hpp"
 #include <cctype>
 #include <cmath>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <optional>
 #include <string>
 #include <vector>
 
+namespace reader {
 namespace fs = std::filesystem;
 
-namespace reader {
-fs::path get_workspace();
-bool is_problem(const std::string &filename);
+bool is_txt(const std::string &filename);
 
-const std::string INPUT_PATH = "input";
+const static std::string input_dir = "input";
 
-Reader::Reader() {
-  for (auto entry : fs::directory_iterator(get_workspace() / INPUT_PATH)) {
+void Reader::read_dir() {
+  todo = std::queue<fs::path>();
+
+  for (auto entry :
+       fs::directory_iterator(workspace::get_workspace() / input_dir)) {
     fs::path path = entry.path();
-    std::string filename = path.filename();
+    std::string name = path.filename();
 
-    if (!is_problem(filename)) {
+    if (!is_txt(name)) {
       continue;
     }
 
@@ -31,27 +32,24 @@ Reader::Reader() {
   }
 }
 
-std::optional<fs::path> Reader::get() {
+std::optional<Sudoku> Reader::get() {
   if (todo.empty()) {
     return std::nullopt;
   }
 
   fs::path path = todo.front();
-  return path;
-}
-
-Reader &Reader::operator++() {
   todo.pop();
-  return *this;
+  return read_problem(path);
 }
 
-std::vector<uint8_t> Reader::read_problem(const std::string &filepath) {
-  std::ifstream file;
-  std::vector<uint8_t> sheet(std::pow(9, 2), 0);
+Sudoku read_problem(const fs::path &filepath) {
+  Sudoku sudoku;
   char chr;
   uint8_t needle = 0;
+  std::vector<uint8_t> sheet(pow(9, 2), 0);
 
-  file.open(filepath, std::ios::out);
+  std::ifstream file;
+  file.open(filepath);
 
   while (file.get(chr)) {
     if (std::isdigit(chr)) {
@@ -60,29 +58,12 @@ std::vector<uint8_t> Reader::read_problem(const std::string &filepath) {
   }
 
   file.close();
-  return sheet;
+  sudoku.sheet = sheet;
+  sudoku.name = filepath.filename();
+  return sudoku;
 }
 
-fs::path get_workspace() {
-  std::vector<std::string> references = {".git/", "build/", "main.cpp"};
-
-  for (auto curr = fs::current_path(); curr != fs::path("/");
-       curr = curr.parent_path()) {
-
-    for (auto entry : fs::directory_iterator(curr)) {
-      auto filename = entry.path().filename();
-      auto find = std::find(references.begin(), references.end(), filename);
-
-      if (find != references.end()) {
-        return curr;
-      }
-    }
-  }
-
-  return fs::current_path();
-}
-
-bool is_problem(const std::string &filename) {
+bool is_txt(const std::string &filename) {
   const static std::string ext = ".txt";
 
   if (ext.size() > filename.size()) {
@@ -92,7 +73,7 @@ bool is_problem(const std::string &filename) {
   int begin = filename.size() - ext.size();
 
   for (int i = 0; i < ext.size(); ++i) {
-    if (filename[i] != ext[i]) {
+    if (filename[begin + i] != ext[i]) {
       return false;
     }
   }

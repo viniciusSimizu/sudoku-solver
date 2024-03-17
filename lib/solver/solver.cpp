@@ -14,17 +14,13 @@ void solve_problem(uint8_t idx_2d, std::vector<bool> &sheet, bool &solved);
 
 uint16_t get_2d_to_3d_idx(uint8_t idx_2d);
 
-Solver::Solver() : sheet(std::vector<bool>(pow(9, 3))), solvable(false) {}
-
 void Solver::feed(const std::vector<uint8_t> &problem) {
   if (!is_valid_problem(problem)) {
     solvable = false;
     return;
   }
 
-  for (uint16_t idx_3d = 0; idx_3d < sheet.size(); ++idx_3d) {
-    sheet[idx_3d] = true;
-  }
+  sheet = std::vector<bool>(pow(9, 3), true);
 
   for (uint8_t idx_2d = 0; idx_2d < pow(9, 2); ++idx_2d) {
     uint8_t z = problem[idx_2d];
