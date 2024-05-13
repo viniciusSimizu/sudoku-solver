@@ -3,13 +3,14 @@
 #include <cstdint>
 
 namespace iterator {
+
 struct It {
 public:
   virtual int8_t next() = 0;
 
 protected:
-  uint8_t curr, x, y;
-  It() : curr(0), x(0), y(0){};
+  uint8_t count, x, y;
+  It() : count(0), x(0), y(0){};
 };
 
 struct BlockIt : It {

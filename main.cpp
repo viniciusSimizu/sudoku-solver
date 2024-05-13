@@ -1,28 +1,21 @@
 #include "reader.hpp"
 #include "solver.hpp"
+#include "sudoku.hpp"
 #include "writer.hpp"
 
-using reader::Reader;
-using solver::Solver;
-
 int main() {
-  Reader reader;
-  reader.read_dir();
+  std::vector<std::string> files = reader::search_problems();
 
-  Solver solver;
+  for (std::string file : files) {
+    std::optional<sudoku::sudoku *> data = reader::read_sheet(file);
 
-  for (auto case_ = reader.get(); case_.has_value(); case_ = reader.get()) {
-    reader::Sudoku sudoku = case_.value();
-    solver.feed(sudoku.sheet);
-    solver.solve();
-
-    if (!solver.solvable) {
+    if (!data.has_value()) {
       continue;
-    }
+    };
 
-    auto solution = solver.export_();
-    writer::save(solution, sudoku.name);
-  }
+    solver::solve(*data.value());
+    writer::save(*data.value());
 
-  return 0;
+    sudoku::free(data.value());
+  };
 }
