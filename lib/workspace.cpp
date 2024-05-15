@@ -1,5 +1,5 @@
 #include "workspace.hpp"
-#include <algorithm>
+#include <filesystem>
 #include <optional>
 #include <vector>
 
@@ -10,17 +10,21 @@ std::vector<std::string> references = {".git/", "build/", "main.cpp"};
 namespace fs = std::filesystem;
 
 std::optional<fs::path> find_workspace() {
-  for (auto path = fs::current_path(); path != fs::path("/");
-       path = path.parent_path()) {
-    for (auto entry : fs::directory_iterator(path)) {
-      auto filename = entry.path().filename();
-      auto it = std::find(references.begin(), references.end(), filename);
+  fs::path path = __FILE__;
 
-      if (it != references.end()) {
-        return path;
-      }
-    }
-  }
+  while (path != fs::path("/")) {
+    path = path.parent_path();
+
+    for (fs::directory_entry entry : fs::directory_iterator(path)) {
+      std::string filename = entry.path().filename();
+
+      for (const std::string &root_ref : references) {
+        if (root_ref.compare(filename) == 0) {
+          return path;
+        };
+      };
+    };
+  };
 
   return std::nullopt;
 }

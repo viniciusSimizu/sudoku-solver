@@ -1,4 +1,5 @@
 #include "writer.hpp"
+#include "logger.hpp"
 #include "workspace.hpp"
 #include <cmath>
 #include <cstdint>
@@ -12,7 +13,10 @@ namespace fs = std::filesystem;
 std::optional<fs::path> cwd = find_workspace();
 
 void save(sudoku::sudoku &data) {
+  logger::info("saving " + *data.filename);
+
   if (!cwd.has_value()) {
+    logger::error("workspace not found");
     std::exit(201);
   };
 
@@ -51,6 +55,7 @@ void save(sudoku::sudoku &data) {
   };
 
   file.close();
+  logger::info("saving [finished]");
 }
 
 }; // namespace writer

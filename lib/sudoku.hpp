@@ -8,7 +8,7 @@ namespace sudoku {
 
 struct sudoku {
   std::vector<uint8_t> *sheet;
-  std::string *filename;
+  const std::string *filename;
   bool solved;
 };
 

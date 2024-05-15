@@ -1,9 +1,11 @@
 #include "reader.hpp"
+#include "logger.hpp"
 #include "sudoku.hpp"
 #include "workspace.hpp"
 #include <cctype>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
@@ -17,28 +19,33 @@ namespace fs = std::filesystem;
 
 std::optional<fs::path> cwd = find_workspace();
 
-bool is_readable(const std::string &extension);
+std::optional<sudoku::sudoku *> scan_file(const std::string &filename);
 fs::path find_file(const std::string &filename);
 
-std::vector<std::string> search_problems() {
+std::vector<sudoku::sudoku *> search_problems() {
+  logger::info("searching files");
+
   if (!cwd.has_value()) {
+    logger::error("workspace not found");
     std::exit(201);
   };
 
-  std::vector<std::string> files;
+  std::vector<sudoku::sudoku *> files;
 
   for (auto entry : fs::directory_iterator(cwd.value() / INPUT)) {
-    std::string extension = entry.path().extension();
+    std::optional<sudoku::sudoku *> data = scan_file(entry.path().filename());
 
-    if (is_readable(extension)) {
-      files.push_back(entry.path().filename());
+    if (data.has_value()) {
+      logger::info("file scanned " + *data.value()->filename);
+      files.push_back(data.value());
     }
   };
 
+  logger::info("searching files [finished]");
   return files;
 };
 
-std::optional<sudoku::sudoku*> read_sheet(std::string &filename) {
+std::optional<sudoku::sudoku *> scan_file(const std::string &filename) {
   fs::path filepath = find_file(filename);
   auto *sheet = new std::vector<uint8_t>(std::pow(9, 2));
 
@@ -49,30 +56,32 @@ std::optional<sudoku::sudoku*> read_sheet(std::string &filename) {
   std::size_t i = 0;
 
   while (file.get(chr)) {
+    if (i > std::pow(9, 2)) {
+      break;
+    }
+
     if (std::isdigit(chr)) {
       (*sheet)[i++] = chr - '0';
     };
   };
 
   file.close();
-  if (sheet->size() != sheet->capacity()) {
+
+  if (i > std::pow(9, 2)) {
+    delete sheet;
     return std::nullopt;
   };
 
-	auto *data = new sudoku::sudoku;
-	data->sheet = sheet;
-	data->filename = &filename;
-	data->solved = false;
+  auto *data = new sudoku::sudoku;
+  data->sheet = sheet;
+  data->filename = &filename;
+  data->solved = false;
 
-	return data;
+  return data;
 };
 
 fs::path find_file(const std::string &filename) {
   return cwd.value() / INPUT / filename;
-};
-
-bool is_readable(const std::string &extension) {
-  return extension.compare("txt");
 };
 
 } // namespace reader

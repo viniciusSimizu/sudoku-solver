@@ -4,18 +4,12 @@
 #include "writer.hpp"
 
 int main() {
-  std::vector<std::string> files = reader::search_problems();
+  std::vector<sudoku::sudoku *> cases = reader::search_problems();
 
-  for (std::string file : files) {
-    std::optional<sudoku::sudoku *> data = reader::read_sheet(file);
+  for (sudoku::sudoku *case_ : cases) {
+    solver::solve(*case_);
+    writer::save(*case_);
 
-    if (!data.has_value()) {
-      continue;
-    };
-
-    solver::solve(*data.value());
-    writer::save(*data.value());
-
-    sudoku::free(data.value());
+    sudoku::free(case_);
   };
 }

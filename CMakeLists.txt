@@ -14,4 +14,4 @@ enable_testing()
 add_subdirectory(test)
 
 add_executable(main main.cpp)
-target_link_libraries(main PRIVATE reader solver writer sudoku)
+target_link_libraries(main PRIVATE reader solver writer workspace sudoku logger)

@@ -9,26 +9,34 @@
 
 using namespace iterator;
 
-sudoku::sudoku *arrangement_resolved();
-sudoku::sudoku *arrangement_partial();
-sudoku::sudoku *arrangement_invalid();
-bool assert_sheet(sudoku::sudoku &data);
+struct arrangement {
+  sudoku::sudoku *sudoku;
+  bool solvable;
+};
+
+arrangement *arrangement_resolved();
+arrangement *arrangement_partial();
+arrangement *arrangement_invalid();
+bool assert_sheet(arrangement &data);
 std::vector<uint8_t> *create_sheet(const std::string &txt);
-sudoku::sudoku *create_arrangement(const std::string &txt, bool solvable);
+arrangement *create_arrangement(const std::string &txt, bool solvable);
 
 int main() {
-  std::vector<sudoku::sudoku *> arrangs = {
+  std::vector<arrangement *> cases = {
       arrangement_resolved(), arrangement_partial(), arrangement_invalid()};
 
-  for (sudoku::sudoku *arrang : arrangs) {
-    assert(assert_sheet(*arrang));
-    sudoku::free(arrang);
+  for (arrangement *case_ : cases) {
+    bool result = assert_sheet(*case_);
+    sudoku::free(case_->sudoku);
+    delete case_;
+
+    assert(result);
   };
 
   return 0;
 };
 
-struct sudoku::sudoku *arrangement_resolved() {
+arrangement *arrangement_resolved() {
   std::string txt = "1 2 3 7 8 9 4 5 6"
                     "4 5 6 1 2 3 7 8 9"
                     "7 8 9 4 5 6 1 2 3"
@@ -41,7 +49,7 @@ struct sudoku::sudoku *arrangement_resolved() {
   return create_arrangement(txt, true);
 }
 
-struct sudoku::sudoku *arrangement_partial() {
+arrangement *arrangement_partial() {
   std::string txt = "7 x x x x x 1 x x"
                     "x 9 x x 4 x x x x"
                     "x x x x x x x x 3"
@@ -54,7 +62,7 @@ struct sudoku::sudoku *arrangement_partial() {
   return create_arrangement(txt, true);
 }
 
-struct sudoku::sudoku *arrangement_invalid() {
+arrangement *arrangement_invalid() {
   std::string txt = "x x x x x x 1 1 x"
                     "x x x x x x x x x"
                     "x x x x x x x x x"
@@ -67,21 +75,29 @@ struct sudoku::sudoku *arrangement_invalid() {
   return create_arrangement(txt, false);
 }
 
-bool assert_sheet(sudoku::sudoku &data) {
-  bool resolvable = data.solved;
-  solver::solve(data);
+bool assert_sheet(arrangement &data) {
+  sudoku::sudoku *case_ = data.sudoku;
+  std::vector<uint8_t> case_cpy(*case_->sheet);
 
-  if (data.solved != resolvable) {
+  solver::solve(*case_);
+
+  if (case_->solved != data.solvable) {
     return false;
   };
 
-  for (uint8_t i = 0; i < std::pow(9, 2); ++i) {
-    if ((*data.sheet)[i] == 0) {
-      if (data.solved == true) {
+  if (!data.solvable) {
+    for (uint8_t i = 0; i < std::pow(9, 2); ++i) {
+      if ((*case_->sheet)[i] != case_cpy[i]) {
         return false;
       };
+    };
 
-      continue;
+    return true;
+  };
+
+  for (uint8_t i = 0; i < std::pow(9, 2); ++i) {
+    if ((*case_->sheet)[i] == 0) {
+      return false;
     };
 
     RowIt rowIt = i;
@@ -96,7 +112,7 @@ bool assert_sheet(sudoku::sudoku &data) {
         if (i == j)
           continue;
 
-        if ((*data.sheet)[i] == (*data.sheet)[j]) {
+        if ((*case_->sheet)[i] == (*case_->sheet)[j]) {
           return false;
         };
       };
@@ -125,10 +141,15 @@ std::vector<uint8_t> *create_sheet(const std::string &txt) {
   return sheet;
 };
 
-struct sudoku::sudoku *create_arrangement(const std::string &txt,
-                                          bool solvable) {
-  sudoku::sudoku *data = new sudoku::sudoku;
-  data->sheet = create_sheet(txt);
-  data->solved = solvable;
+arrangement *create_arrangement(const std::string &txt, bool solvable) {
+  arrangement *data = new arrangement;
+  sudoku::sudoku *case_ = new sudoku::sudoku;
+
+  case_->sheet = create_sheet(txt);
+  case_->solved = false;
+	case_->filename = nullptr;
+  data->sudoku = case_;
+  data->solvable = solvable;
+
   return data;
 };

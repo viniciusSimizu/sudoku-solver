@@ -1,5 +1,6 @@
 #include "solver.hpp"
 #include "iterator.hpp"
+#include "logger.hpp"
 #include <cmath>
 #include <vector>
 
@@ -13,12 +14,16 @@ bool possible_value(uint8_t value, uint8_t idx,
 bool is_valid(std::vector<uint8_t> &sheet);
 
 void solve(sudoku::sudoku &data) {
+  logger::info("solving " + *data.filename);
+
   if (!is_valid(*data.sheet)) {
     data.solved = false;
+    logger::info("unsolvable case");
     return;
   };
 
   data.solved = try_solve(0, *data.sheet);
+  logger::info("solving [executed]");
 };
 
 bool try_solve(uint8_t idx, std::vector<uint8_t> &sheet) {
