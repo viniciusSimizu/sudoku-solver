@@ -33,10 +33,16 @@ std::vector<sudoku::sudoku *> search_problems() {
   std::vector<sudoku::sudoku *> files;
 
   for (auto entry : fs::directory_iterator(cwd.value() / INPUT)) {
-    std::optional<sudoku::sudoku *> data = scan_file(entry.path().filename());
+    if (entry.path().extension().compare(EXT) != 0) {
+      continue;
+    };
+
+    std::string filename = entry.path().filename();
+    std::optional<sudoku::sudoku *> data = scan_file(filename);
 
     if (data.has_value()) {
-      logger::info("file scanned " + *data.value()->filename);
+      data.value()->filename = new std::string(entry.path().stem());
+      logger::info("file scanned " + *data.value()->filename + EXT);
       files.push_back(data.value());
     }
   };
@@ -74,7 +80,6 @@ std::optional<sudoku::sudoku *> scan_file(const std::string &filename) {
 
   auto *data = new sudoku::sudoku;
   data->sheet = sheet;
-  data->filename = &filename;
   data->solved = false;
 
   return data;

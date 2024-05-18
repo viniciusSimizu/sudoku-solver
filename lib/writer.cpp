@@ -33,24 +33,29 @@ void save(sudoku::sudoku &data) {
   uint8_t i = 0;
 
   while (true) {
-    file << (*data.sheet)[i++];
+    file << (int)(*data.sheet)[i++];
 
-    if (i >= std::pow(9, 2))
+    if (i >= std::pow(9, 2)) {
       break;
+    };
 
     uint8_t x = i % 9;
     uint8_t y = i / 9;
 
-    if (x != 0) {
-      file << '|';
-    };
-
     if (x == 0) {
       file << '\n';
-    };
 
-    if (x == 0 && y % 3 == 0) {
-      file << "===========\n";
+      if (y % 3 == 0) {
+        file << "-----------------\n";
+      };
+
+    } else {
+      if (x % 3 == 0) {
+        file << '|';
+
+      } else {
+        file << ' ';
+      }
     };
   };
 

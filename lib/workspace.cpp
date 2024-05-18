@@ -1,15 +1,11 @@
 #include "workspace.hpp"
 #include <filesystem>
 #include <optional>
-#include <vector>
-
-namespace {
-std::vector<std::string> references = {".git/", "build/", "main.cpp"};
-}; // namespace
 
 namespace fs = std::filesystem;
 
 std::optional<fs::path> find_workspace() {
+  std::string references[] = {".git", "build", "main.cpp"};
   fs::path path = __FILE__;
 
   while (path != fs::path("/")) {
